@@ -372,3 +372,34 @@ deployer.deploy(SomeContract).then(function(){
 	var c = SomeContract.at(SomeContract.address);
 })
 ```
+
+# Testing
+
+## Fast Forwarding TestRPC
+A lot of contracts you write might be time based, and so you may wish to "fast forward" testrpc to ensure your contracts work as designed.  I was surprised how hard I had to search to find out how to do this.
+
+Anyway, here's how to do it using web3:
+
+```
+function fastForward(timeInSeconds){
+	if (!Number.isInteger(timeInSeconds))
+		throw new Error("Passed a non-number: " + timeInSeconds);
+	if (timeInSeconds <= 0)
+		throw new Error("Can not fastforward a negative amount: " + timeInSeconds);
+	
+	// move time forward.
+	web3.currentProvider.send({
+        jsonrpc: "2.0",
+        method: "evm_increaseTime",
+        params: [timeInSeconds],
+        id: new Date().getTime()
+    });
+	// mine a block to make sure future calls use updated time.
+	web3.currentProvider.send({
+        jsonrpc: "2.0",
+        method: "evm_mine",
+        params: null,
+        id: new Date().getTime()
+    });
+}
+```
