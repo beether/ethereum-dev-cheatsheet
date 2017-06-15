@@ -162,25 +162,23 @@ In the below example, `addr` is the recipient address.
 
 `var _success = addr.send(valueInWei)`
 
-* Sends Ether
+* Calls fallback function if `addr` is a contract
 * Returns boolean for success or not
-* Calls fallback function 
 * Sends small amount of gas (2300)
 
 ---
 
 `addr.transfer(valueInWei)`
 
-* Sends Ether
+* Calls fallback function if `addr` is a contract
 * throws on failure
-* Fallback function
 * Sends small amount of gas (2300)
 
 ---
 
 `var _succees = addr.call.value(valueInWei).gas(uint)();`
 
-* Calls fallback function
+* Calls fallback function if `addr` is a contract
 * Returns boolean for success or not
 * Sends custom amount of gas (defaults to 0: unlimited)
 * Sends custom value
@@ -192,7 +190,7 @@ In the below example, `addr` is the recipient address.
 * Returns whatever the function returns
 * Sends unlimited gas
 * No value
-* !! Note:  Solidity must know the type of `addr` and that it has `someFunction`
+* !! Note:  Solidity must know the type of `addr` and that it has `payable someFunction`
 
 ---
 
@@ -201,7 +199,11 @@ In the below example, `addr` is the recipient address.
 * Returns whatever the function returns 
 * Sends custom amount of gas (defaults to 0: unlimited)
 * Sends custom value
-* !! Note:  Solidity must know the type of `addr` and that it has `someFunction`
+* !! Note:  Solidity must know the type of `addr` and that it has `payable someFunction`
+
+---
+
+There is some other version of `addr.call` where you hash the signature of the method.  Look it up in the docs.
 
 
 
