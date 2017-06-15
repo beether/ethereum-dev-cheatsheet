@@ -190,7 +190,7 @@ In the below example, `addr` is the recipient address.
 * Returns whatever the function returns
 * Sends unlimited gas
 * No value
-* !! Note:  Solidity must know the type of `addr` and that it has `payable someFunction`
+* !! Note:  Solidity must know the type of `addr` and that it has `someFunction`
 
 ---
 
