@@ -156,12 +156,18 @@ Under the hood, a client will convert what the user intends to do into the `data
 
 ## <a name="sc-s"></a>Sending Messages (Internal Transactions)
 
+In the below example, `addr` is the recipient address.
+
+---
+
 `var _success = addr.send(valueInWei)`
 
 * Sends Ether
 * Returns boolean for success or not
 * Calls fallback function 
 * Sends small amount of gas (2300)
+
+---
 
 `addr.transfer(valueInWei)`
 
@@ -170,24 +176,32 @@ Under the hood, a client will convert what the user intends to do into the `data
 * Fallback function
 * Sends small amount of gas (2300)
 
-`var _succees = someContract.call.value(valueInWei).gas(uint)();`
+---
+
+`var _succees = addr.call.value(valueInWei).gas(uint)();`
 
 * Calls fallback function
 * Returns boolean for success or not
 * Sends custom amount of gas (defaults to 0: unlimited)
 * Sends custom value
 
-`var _returnedValue = someContract.someFunction(param1, param2,...);`
+---
+
+`var _returnedValue = addr.someFunction(param1, param2,...);`
 
 * Returns whatever the function returns
 * Sends unlimited gas
 * No value
+* !! Note:  Solidity must know the type of `addr` and that it has `someFunction`
 
-`var _returnedValue = someContract.someFunction.value(valueInWei).gas(uint)(param1, param2, ...);`
+---
+
+`var _returnedValue = addr.someFunction.value(valueInWei).gas(uint)(param1, param2, ...);`
 
 * Returns whatever the function returns 
 * Sends custom amount of gas (defaults to 0: unlimited)
 * Sends custom value
+* !! Note:  Solidity must know the type of `addr` and that it has `someFunction`
 
 
 
@@ -403,3 +417,46 @@ function fastForward(timeInSeconds){
     });
 }
 ```
+
+# Patterns
+
+## Upgrading Smart Contracts
+
+I personally have a deployed `Registry` contract that contains `name=>address` mappings for singleton contracts.  When my contracts need to talk to one another, they _always_ ask the registry first.
+
+When I need to upgrade a singleton, I deploy a new instance, and upgrade the registry name for it.  Since all my contracts always ask the registry for the latest name, no further action should be necessary.
+
+However, this only works because my singleton contracts do not store a lot of state, and when I deploy new versions I copy the state over.
+
+If you require copying state over that is huge or unknown (eg, mappings), you will have to use the `Relay` (aka `delegatecall`) pattern.
+
+[For more on upgrading contracts, go here](https://github.com/ConsenSys/smart-contract-best-practices#eng-techniques)
+
+## Handling errors:  Returning vs Throwing
+
+When you `throw` in Solidity, nothing is returned.  No error message.  No trace.  Nothing.  This is fucking stupid, and makes testing things a nightmare.
+
+For example:
+
+```
+contract Foo {
+	function doStuff(){
+		require(msg.sender == "0xABC...");
+		require(msg.value > 100);
+		... other code ...
+	}
+}
+```
+
+
+```
+it("fails when wrong amount is sent", function(done){
+	myFoo.doStuff({from: "0xBCA...", 90})
+		.then(function(){ done("We expected this call to fail"); )
+		.catch(done);
+});
+```
+
+This test will pass -- but for the wrong reason.  It failed because you passed the wrong address.  You never really tested that it fails because the wrong amount was sent.
+
+[Anyway, read more about returning vs throwing here.](https://ethereum.stackexchange.com/questions/10046/throw-vs-return)
