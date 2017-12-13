@@ -160,7 +160,7 @@ In the below example, `addr` is the recipient address.
 
 ---
 
-`var _success = addr.send(valueInWei)`
+`bool _success = addr.send(valueInWei)`
 
 * Calls fallback function if `addr` is a contract
 * Returns boolean for success or not
@@ -176,10 +176,19 @@ In the below example, `addr` is the recipient address.
 
 ---
 
-`var _succees = addr.call.value(valueInWei).gas(uint)();`
+`bool _succees = addr.call.value(valueInWei).gas(uint)();`
 
 * Calls fallback function if `addr` is a contract
 * Returns boolean for success or not
+* Sends custom amount of gas (defaults to 0: unlimited)
+* Sends custom value
+
+---
+
+`bytes4 _signature = bytes4(sha3("fnName(param1type,param2type)"))`
+`bool _success = addr.call.value().gas()(_signature, param1, param2...)`
+
+* Returns true or false
 * Sends custom amount of gas (defaults to 0: unlimited)
 * Sends custom value
 
@@ -189,7 +198,7 @@ In the below example, `addr` is the recipient address.
 
 * Returns whatever the function returns
 * Sends unlimited gas
-* No value
+* Cannot set value
 * !! Note:  Solidity must know the type of `addr` and that it has `someFunction`
 
 ---
@@ -203,19 +212,33 @@ In the below example, `addr` is the recipient address.
 
 ---
 
-There is some other version of `addr.call` where you hash the signature of the method.  Look it up in the docs.
+It might be useful to know how to handle multiple return values.
+
+Here:
+
+```
+var (return1, return2) = ...
+```
+
+Or if you know the types
+
+```
+(uint _re1, bytes32 _ret2) = ...
+```
 
 
 
-# Web / truffle-contract
+# Web3 / truffle-contract
 
 Truffle-contract is basically Web3, but returns promises.  Not sure what else it does.
 
 ## Transactions
 
+### Manually
+
 Most everything you deal with will be a transaction, and will in some way call `sendTransaction`.  [Web3 docs can be found here](https://github.com/ethereum/wiki/wiki/JavaScript-API#web3ethsendtransaction).
 
-Here's how it is called.  Most of the `myContract.doStuff` will simply fill in the proper values to fields (like `data` and `to`)
+Here's how to create transactions manually:
 
 Example:
 
@@ -262,6 +285,32 @@ truffle-contract returns a promise fulfilled with an object:
 	logs: [{ ...log1... }, { ...log2... }],
 }
 ```
+
+**Note: It's not possible to get return values when doing a transaction, because Ethereum is so amazing.**
+
+**Note: Logs will contain matches from addresses other than the contract you are sending to if they match the topic name.  This is a bug in web3.  For example, if your contract has an event called "Foo" and other contracts called log a "Foo" event, all the "Foo"s will show up in the logs	**
+
+### Using ABIs
+
+Web3 and truffle use ABIs to fill out some of the transaction params.
+
+```
+myContract.doStuff(arg1, arg2, options).then( ... )
+```
+
+Under the hood this will do a sendTransaction, but will fill out the `to`, and `data`.
+
+No, Web3 and truffle-contract don't unfortunately use named params.  And if you omit some arguments, things get really fucked up.  So, be careful.
+
+### Calls
+
+Doing a call is different than a TX.  It does not touch the network -- no state will be changed.  However, you can at least get a fucking return value back.
+
+_(Side note: I'm not sure what happens if you do `if (addr.send()) { return 1; } else { return 0; } ` inside of a call)_
+
+At any rate, it's about the same as the above, except tack on `.call` and pass the params there.  I don't know why you can't just tack on `.asCall()`
+
+
 
 ## Events
 
